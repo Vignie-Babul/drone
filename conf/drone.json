@@ -1,0 +1,7 @@
+{
+  "max_speed": 0,
+  "acceleration": 0,
+  "rotation_speed": 0,
+  "battery_life": 0,
+  "obstacle_penalty": 0
+}

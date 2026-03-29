@@ -1,0 +1,21 @@
+[project]
+name = "drone"
+version = "0.1.0"
+description = ""
+requires-python = ">=3.14"
+dependencies = [
+	"pytest>=9.0.2",
+]
+
+
+[tool.ruff]
+indent-width = 4
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "UP", "B", "SIM", "I"]
+ignore = ["I001", "UP046"]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "tab"

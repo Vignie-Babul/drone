@@ -1,0 +1,10 @@
+{
+  "ru": {
+    "foo": "бар",
+    "hello_world": "Привет, Мир!"
+  },
+  "en": {
+    "foo": "bar",
+    "hello_world": "Hello! World!"
+  }
+}
