@@ -1,18 +1,11 @@
+from src.config import PATHS
 from src.data import Analitycs, DataSave
 from src.utils import get_iso_datetime
 
 
-PATHS = {
-	'local_conf': 'conf/local.json',
-	'drone_conf': 'conf/drone.json',
-	'analitycs': 'data/analitycs.json',
-	'data_save': 'data/save.json',
-}
-
-
 def analitycs_test() -> None:
 	analitycs = Analitycs(
-		PATHS['analitycs'],
+		PATHS['data']['analitycs'],
 		{
 			'name': 'event_' + get_iso_datetime(),
 			'timestamp': get_iso_datetime(),
@@ -31,7 +24,7 @@ def analitycs_test() -> None:
 	analitycs.send(False)
 
 def data_save_test() -> None:
-	data_save = DataSave(PATHS['data_save'])
+	data_save = DataSave(PATHS['data']['save'])
 	print(data_save.load())
 	data_save.dump()
 	print(data_save.load())

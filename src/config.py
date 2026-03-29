@@ -5,6 +5,26 @@ from typing import Any
 from src.models import StrOrPath
 
 
+PATHS = {
+	# 'assets': {
+	# 	'models': {
+	# 		'drone': 'assets/models/...',
+	# 	},
+	# 	'images': {
+	# 		'...': '.../...'
+	# 	},
+	# },
+	'conf': {
+		'local': 'conf/local.json',
+		'drone': 'conf/drone.json',
+	},
+	'data': {
+		'analitycs': 'data/analitycs.json',
+		'save': 'data/save.json',
+	},
+}
+
+
 class JSONConfig:
 	def __init__(self, path: StrOrPath) -> None:
 		self._path = path
