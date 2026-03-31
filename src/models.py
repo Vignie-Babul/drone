@@ -4,6 +4,8 @@ from typing import TypedDict
 
 type StrOrPath = str | os.PathLike[str]
 
+type DroneCrashed = str
+
 
 class LevelCompleted(TypedDict):
 	timestamp: str
@@ -12,9 +14,9 @@ class LevelCompleted(TypedDict):
 
 class Data(TypedDict):
 	game_started: str
-	level_completed: LevelCompleted
-	drone_crashed: str
 	game_closed: str
+	status: bool
+	data: LevelCompleted | DroneCrashed
 
 
 class AnalitycsEvent(TypedDict):

@@ -2,6 +2,7 @@ from pprint import pprint
 
 from src.config import PATHS, JSONConfig, Localization
 from src.data import Analitycs, DataSave
+from src.models import AnalitycsEvent
 from src.utils import get_iso_datetime
 
 
@@ -30,24 +31,38 @@ def drone_config_test() -> None:
 	print()
 
 def analitycs_test() -> None:
-	analitycs = Analitycs(
-		PATHS['data']['analitycs'],
-		{
-			'name': 'event_' + get_iso_datetime(),
-			'timestamp': get_iso_datetime(),
+	analitycs_event_true: AnalitycsEvent = {
+		'name': 'event_' + get_iso_datetime(),
+		'timestamp': get_iso_datetime(),
+		'data': {
+			'game_started': get_iso_datetime(),
+			'game_closed': get_iso_datetime(),
+			'status': True, # level completed
 			'data': {
-				'game_started': get_iso_datetime(),
-				'level_completed': {
-					'timestamp': get_iso_datetime(),
-					'total_score': 0,
-				},
-				'drone_crashed': get_iso_datetime(),
-				'game_closed': get_iso_datetime(),
+				'timestamp': get_iso_datetime(),
+				'total_score': 0,
 			},
-		}
-	)
-	analitycs.send(True)
-	analitycs.send(False)
+		},
+	}
+
+	analitycs_event_false: AnalitycsEvent = {
+		'name': 'event_' + get_iso_datetime(),
+		'timestamp': get_iso_datetime(),
+		'data': {
+			'game_started': get_iso_datetime(),
+			'game_closed': get_iso_datetime(),
+			'status': False, # drone crashed
+			'data': get_iso_datetime(),
+		},
+	}
+
+	analitycs_true = Analitycs(PATHS['data']['analitycs'], analitycs_event_true)
+	analitycs_true.send(True)
+	analitycs_true.send(False)
+
+	analitycs_false = Analitycs(PATHS['data']['analitycs'], analitycs_event_false)
+	analitycs_false.send(True)
+	analitycs_false.send(False)
 
 def data_save_test() -> None:
 	data_save = DataSave(PATHS['data']['save'])
