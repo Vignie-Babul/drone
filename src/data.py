@@ -44,10 +44,13 @@ class DataSave:
 			'version': 0,
 		}
 
+		path_dirname = os.path.dirname(path)
+		if not os.path.exists(path_dirname):
+			os.makedirs(path_dirname)
+
 		if os.path.exists(path):
 			self._data = self.load()
 		else:
-			os.makedirs(os.path.dirname(path))
 			self.dump()
 
 	def dump(

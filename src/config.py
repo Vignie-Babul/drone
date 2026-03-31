@@ -1,4 +1,5 @@
 import json
+import os
 from collections.abc import Mapping
 from typing import Any
 
@@ -28,6 +29,10 @@ PATHS = {
 class JSONConfig:
 	def __init__(self, path: StrOrPath) -> None:
 		self._path = path
+
+		path_dirname = os.path.dirname(path)
+		if not os.path.exists(path_dirname):
+			os.makedirs(path_dirname)
 
 	def dump(self, config: Mapping[str, Any]) -> None:
 		with open(self._path, 'w', encoding='utf-8') as file:
