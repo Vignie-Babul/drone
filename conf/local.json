@@ -1,10 +1,20 @@
 {
-  "ru": {
-    "foo": "бар",
-    "hello_world": "Привет, Мир!"
+  "1": {
+    "ru": {
+      "foo": "бар",
+      "hello_world": "Привет, Мир!"
+    },
+    "en": {
+      "foo": "bar",
+      "hello_world": "Hello! World!"
+    }
   },
-  "en": {
-    "foo": "bar",
-    "hello_world": "Hello! World!"
+  "2": {
+    "ru": {},
+    "en": {}
+  },
+  "3": {
+    "ru": {},
+    "en": {}
   }
 }

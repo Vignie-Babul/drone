@@ -3,7 +3,8 @@ import os
 import sys
 
 from src.b64 import b64enc, b64dec
-from src.models import StrOrPath, AnalitycsEvent
+from src.config import Settings, JSONConfig
+from src.models import AnalitycsEvent, StrOrPath, JSONDict
 from src.utils import has_internet_connection
 
 
@@ -34,24 +35,38 @@ class Analitycs:
 
 
 class DataSave:
-	def __init__(self, path: StrOrPath) -> None:
+	def __init__(self, path: StrOrPath, settings: JSONConfig) -> None:
 		self._path = path
 
-		self._data = {
+		_settings = settings.load()
+		self._slot = str(_settings[Settings.SAVE_SLOT.value])
+		self._slot_count = _settings[Settings.SAVE_SLOT_COUNT.value]
+
+		self._save = {
 			'best_time': 0,
 			'total_score': 0,
 			'unlocked_levels': 0,
-			'version': 0,
 		}
 
-		path_dirname = os.path.dirname(path)
+		self._make_data_dir()
+		self._init_dump()
+
+	def _make_data_dir(self) -> None:
+		path_dirname = os.path.dirname(self._path)
 		if not os.path.exists(path_dirname):
 			os.makedirs(path_dirname)
 
-		if os.path.exists(path):
-			self._data = self.load()
+	def _init_dump(self) -> None:
+		if os.path.exists(self._path):
+			self._save = self.load()
 		else:
-			self.dump()
+			self._init_slots()
+
+	def _init_slots(self) -> None:
+		slots = {str(i): self._save for i in range(1, self._slot_count + 1)}
+		with open(self._path, 'w', encoding='utf-8') as file:
+			encrypted_json_data = b64enc(json.dumps(slots))
+			file.write(encrypted_json_data.decode('utf-8'))
 
 	def dump(
 		self,
@@ -60,19 +75,27 @@ class DataSave:
 		unlocked_levels: int = 0,
 	) -> None:
 
-		self._data = {
+		self._save = {
 			'best_time': best_time,
 			'total_score': total_score,
 			'unlocked_levels': unlocked_levels,
-			'version': self._data['version'] + 1,
 		}
 
+		slots = self.load(all_=True)
+		if self._slot not in slots:
+			return
+
+		slots[self._slot] = self._save
 		with open(self._path, 'w', encoding='utf-8') as file:
-			encrypted_json_data = b64enc(json.dumps(self._data))
+			encrypted_json_data = b64enc(json.dumps(slots))
 			file.write(encrypted_json_data.decode('utf-8'))
 
-	def load(self) -> dict:
+	def load(self, all_: bool = False) -> JSONDict:
 		with open(self._path, encoding='utf-8') as file:
 			file_bytes = file.read().encode('utf-8')
-			return json.loads(b64dec(file_bytes))
+			slots = json.loads(b64dec(file_bytes))
 
+			if (not all_) and (self._slot in slots):
+				return slots[self._slot]
+
+			return slots

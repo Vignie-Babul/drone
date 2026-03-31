@@ -1,31 +1,47 @@
 from pprint import pprint
 
-from src.config import PATHS, JSONConfig, Localization
+from src.config import PATHS, Settings, JSONConfig, Localization, SlotJSONConfig
 from src.data import Analitycs, DataSave
 from src.models import AnalitycsEvent
 from src.utils import get_iso_datetime
 
 
-def local_config_test() -> None:
-	local = Localization(PATHS['conf']['local'])
+def settings_test(settings: JSONConfig) -> None:
+	settings.dump({
+		Settings.LANGUAGE.value: 'en',
+		Settings.SAVE_SLOT.value: '1',
+		Settings.SAVE_SLOT_COUNT.value: 3,
+	})
+	pprint(settings.load())
+	print()
+
+def local_config_test(settings: JSONConfig, local: Localization) -> None:
 	local.dump({
 		'ru': {'foo': 'бар', 'hello_world': 'Привет, Мир!'},
 		'en': {'foo': 'bar', 'hello_world': 'Hello! World!'},
 	})
 	pprint(local.load())
-	pprint(local.load('ru'))
-	pprint(local.load('en'))
-	print(local.load('en')['hello_world'])
+	print(local.load()['hello_world'])
 	print()
 
-def drone_config_test() -> None:
-	drone = JSONConfig(PATHS['conf']['drone'])
+def drone_config_test(settings: JSONConfig) -> None:
+	drone = SlotJSONConfig(
+		PATHS['conf']['drone'],
+		{
+			'max_speed': 0,
+			'acceleration': 0,
+			'rotation_speed': 0,
+			'battery_life': 0,
+			'obstacle_penalty': 0,
+		},
+		settings,
+	)
 	drone.dump({
-		'max_speed': 0,
-		'acceleration': 0,
-		'rotation_speed': 0,
-		'battery_life': 0,
-		'obstacle_penalty': 0,
+		'max_speed': 1,
+		'acceleration': 2,
+		'rotation_speed': 3,
+		'battery_life': 4,
+		'obstacle_penalty': 5,
 	})
 	pprint(drone.load())
 	print()
@@ -64,15 +80,24 @@ def analitycs_test() -> None:
 	analitycs_false.send(True)
 	analitycs_false.send(False)
 
-def data_save_test() -> None:
-	data_save = DataSave(PATHS['data']['save'])
-	print(data_save.load())
-	data_save.dump()
-	print(data_save.load())
+def data_save_test(data_save: DataSave) -> None:
+	pprint(data_save.load())
+	data_save.dump(123, 4, 56789)
+	pprint(data_save.load())
 
 
 if __name__ == '__main__':
-	local_config_test()
-	drone_config_test()
-	analitycs_test()
-	data_save_test()
+	settings = JSONConfig(PATHS['conf']['settings'])
+	local = Localization(
+		PATHS['conf']['local'],
+		{'ru': {}, 'en': {}},
+		settings,
+	)
+	data_save = DataSave(PATHS['data']['save'], settings)
+
+	# settings_test(settings)
+	# local_config_test(settings, local)
+	# drone_config_test(settings)
+	# analitycs_test()
+	# data_save_test(data_save)
+

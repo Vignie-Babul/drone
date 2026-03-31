@@ -1,8 +1,11 @@
 import os
-from typing import TypedDict
+from collections.abc import Mapping
+from typing import Any, TypedDict
 
 
 type StrOrPath = str | os.PathLike[str]
+type JSONDict = dict[str, Any]
+type JSONMapping = Mapping[str, Any]
 
 type DroneCrashed = str
 
