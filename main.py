@@ -9,7 +9,7 @@ from src.utils import get_iso_datetime
 def settings_test(settings: JSONConfig) -> None:
 	settings.dump({
 		Settings.LANGUAGE.value: 'en',
-		Settings.SAVE_SLOT.value: '1',
+		Settings.SAVE_SLOT.value: 1,
 		Settings.SAVE_SLOT_COUNT.value: 3,
 	})
 	pprint(settings.load())
