@@ -46,7 +46,7 @@ def drone_config_test(settings: JSONConfig) -> None:
 	pprint(drone.load())
 	print()
 
-def analytics_test() -> None:
+def analytics_test(analytics: Analytics) -> None:
 	analytics_event_true: AnalyticsEvent = {
 		'name': 'event_' + get_iso_datetime(),
 		'timestamp': get_iso_datetime(),
@@ -72,13 +72,11 @@ def analytics_test() -> None:
 		},
 	}
 
-	analytics_true = Analytics(PATHS['data']['analytics'], analytics_event_true)
-	analytics_true.send(True)
-	analytics_true.send(False)
+	analytics.send(analytics_event_true, imitate=True)
+	analytics.send(analytics_event_true, imitate=False)
 
-	analytics_false = Analytics(PATHS['data']['analytics'], analytics_event_false)
-	analytics_false.send(True)
-	analytics_false.send(False)
+	analytics.send(analytics_event_false, imitate=True)
+	analytics.send(analytics_event_false, imitate=False)
 
 def data_save_test(data_save: DataSave) -> None:
 	pprint(data_save.load())
@@ -93,11 +91,12 @@ if __name__ == '__main__':
 		{'ru': {}, 'en': {}},
 		settings,
 	)
+	analytics = Analytics(PATHS['data']['analytics'])
 	data_save = DataSave(PATHS['data']['save'], settings)
 
 	# settings_test(settings)
 	# local_config_test(settings, local)
 	# drone_config_test(settings)
-	# analytics_test()
+	# analytics_test(analytics)
 	# data_save_test(data_save)
 

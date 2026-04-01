@@ -9,29 +9,28 @@ from src.utils import has_internet_connection
 
 
 class Analytics:
-	def __init__(self, path: StrOrPath, analytics: AnalyticsEvent) -> None:
+	def __init__(self, path: StrOrPath) -> None:
 		self._path = path
-		self._analytics = analytics
 
 		path_dirname = os.path.dirname(path)
 		if not os.path.exists(path_dirname):
 			os.makedirs(path_dirname)
 
-	def _send_to_server(self) -> None:
+	def _send_to_server(self, analytics: AnalyticsEvent) -> None:
 		# send to the stderr to imitate sending to a server
-		print(self._analytics, file=sys.stderr)
+		print(analytics, file=sys.stderr)
 
-	def _dump_to_file(self) -> None:
+	def _dump_to_file(self, analytics: AnalyticsEvent) -> None:
 		with open(self._path, 'a', encoding='utf-8') as file:
-			json.dump(self._analytics, file, ensure_ascii=False, indent=2)
+			json.dump(analytics, file, ensure_ascii=False, indent=2)
 			file.write('\n')
 
-	def send(self, imitate: bool | None = None) -> None:
+	def send(self, analytics: AnalyticsEvent, imitate: bool | None = None) -> None:
 		if has_internet_connection(imitate=imitate):
-			self._send_to_server()
+			self._send_to_server(analytics)
 			return
 
-		self._dump_to_file()
+		self._dump_to_file(analytics)
 
 
 class DataSave:
