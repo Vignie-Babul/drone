@@ -20,7 +20,7 @@ PATHS = {
 		'settings': 'conf/settings.json',
 	},
 	'data': {
-		'analitycs': 'data/analitycs.json',
+		'analytics': 'data/analytics.json',
 		'save': 'data/save.json',
 	},
 }

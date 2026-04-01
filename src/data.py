@@ -4,14 +4,14 @@ import sys
 
 from src.b64 import b64enc, b64dec
 from src.config import Settings, JSONConfig
-from src.models import AnalitycsEvent, StrOrPath, JSONDict
+from src.models import AnalyticsEvent, StrOrPath, JSONDict
 from src.utils import has_internet_connection
 
 
-class Analitycs:
-	def __init__(self, path: StrOrPath, analitycs: AnalitycsEvent) -> None:
+class Analytics:
+	def __init__(self, path: StrOrPath, analytics: AnalyticsEvent) -> None:
 		self._path = path
-		self._analitycs = analitycs
+		self._analytics = analytics
 
 		path_dirname = os.path.dirname(path)
 		if not os.path.exists(path_dirname):
@@ -19,11 +19,11 @@ class Analitycs:
 
 	def _send_to_server(self) -> None:
 		# send to the stderr to imitate sending to a server
-		print(self._analitycs, file=sys.stderr)
+		print(self._analytics, file=sys.stderr)
 
 	def _dump_to_file(self) -> None:
 		with open(self._path, 'a', encoding='utf-8') as file:
-			json.dump(self._analitycs, file, ensure_ascii=False, indent=2)
+			json.dump(self._analytics, file, ensure_ascii=False, indent=2)
 			file.write('\n')
 
 	def send(self, imitate: bool | None = None) -> None:

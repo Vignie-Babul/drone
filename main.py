@@ -1,8 +1,8 @@
 from pprint import pprint
 
 from src.config import PATHS, Settings, JSONConfig, Localization, SlotJSONConfig
-from src.data import Analitycs, DataSave
-from src.models import AnalitycsEvent
+from src.data import Analytics, DataSave
+from src.models import AnalyticsEvent
 from src.utils import get_iso_datetime
 
 
@@ -46,8 +46,8 @@ def drone_config_test(settings: JSONConfig) -> None:
 	pprint(drone.load())
 	print()
 
-def analitycs_test() -> None:
-	analitycs_event_true: AnalitycsEvent = {
+def analytics_test() -> None:
+	analytics_event_true: AnalyticsEvent = {
 		'name': 'event_' + get_iso_datetime(),
 		'timestamp': get_iso_datetime(),
 		'data': {
@@ -61,7 +61,7 @@ def analitycs_test() -> None:
 		},
 	}
 
-	analitycs_event_false: AnalitycsEvent = {
+	analytics_event_false: AnalyticsEvent = {
 		'name': 'event_' + get_iso_datetime(),
 		'timestamp': get_iso_datetime(),
 		'data': {
@@ -72,13 +72,13 @@ def analitycs_test() -> None:
 		},
 	}
 
-	analitycs_true = Analitycs(PATHS['data']['analitycs'], analitycs_event_true)
-	analitycs_true.send(True)
-	analitycs_true.send(False)
+	analytics_true = Analytics(PATHS['data']['analytics'], analytics_event_true)
+	analytics_true.send(True)
+	analytics_true.send(False)
 
-	analitycs_false = Analitycs(PATHS['data']['analitycs'], analitycs_event_false)
-	analitycs_false.send(True)
-	analitycs_false.send(False)
+	analytics_false = Analytics(PATHS['data']['analytics'], analytics_event_false)
+	analytics_false.send(True)
+	analytics_false.send(False)
 
 def data_save_test(data_save: DataSave) -> None:
 	pprint(data_save.load())
@@ -98,6 +98,6 @@ if __name__ == '__main__':
 	# settings_test(settings)
 	# local_config_test(settings, local)
 	# drone_config_test(settings)
-	# analitycs_test()
+	# analytics_test()
 	# data_save_test(data_save)
 

@@ -22,7 +22,7 @@ class Data(TypedDict):
 	data: LevelCompleted | DroneCrashed
 
 
-class AnalitycsEvent(TypedDict):
+class AnalyticsEvent(TypedDict):
 	name: str
 	timestamp: str
 	data: Data
