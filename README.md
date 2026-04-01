@@ -4,6 +4,7 @@
 
 ### `b64.py`
 **Назначение:** модуль кодирования/декодирования строк в Base64.
+
 **Подключение:**
 ```py
 from src.b64 import b64enc, b64dec
@@ -29,6 +30,7 @@ b'SGVsbG8sIFdvcmxkIQ=='
 
 ### `config.py`
 **Назначение:** модуль управления конфигурацией программы.
+
 **Подключение:**
 ```py
 from src.config import (
@@ -108,6 +110,7 @@ from src.config import (
 
 ### `data.py`
 **Назначение:** модуль управления данными.
+
 **Подключение:**
 ```py
 from src.data import Analytics, DataSave
@@ -152,12 +155,13 @@ from src.data import Analytics, DataSave
 - `path: StrOrPath` - путь к файлу;
 - `base_config: JSONMapping` - базовый конфиг;
 - `settings: JSONConfig` - экземпляр класса конфига настроек;
-- `imitate: bool = False` - имитировать подключение к интернету.
+- `imitate: bool = False` - имитирование подключения к интернету.
 
 ---
 
 ### `models.py`
 **Назначение:** модуль моделей (типов данных). Используется для аннотации типов.
+
 **Подключение:**
 ```py
 from src.models import (
@@ -205,6 +209,7 @@ analytics.send(analytics_event)
 
 ### `utils.py`
 **Назначение:** модуль одиночных функций-утилит.
+
 **Подключение:**
 ```py
 from src.utils import (
@@ -237,4 +242,4 @@ class Analytics:
 ```
 
 **Настройки:**
-- `imitate: bool = False` - имитировать подключение к интернету.
+- `imitate: bool = False` - имитирование подключения к интернету.
