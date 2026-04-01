@@ -12,3 +12,7 @@ __all__ = [
 	'models',
 	'utils',
 ]
+from src import vr_simulator
+from src import drone_controller
+
+__all__.extend(['vr_simulator', 'drone_controller'])
