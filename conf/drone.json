@@ -1,10 +1,10 @@
 {
   "1": {
-    "max_speed": 1,
-    "acceleration": 2,
-    "rotation_speed": 3,
-    "battery_life": 4,
-    "obstacle_penalty": 5
+    "max_speed": 25.0,
+    "acceleration": 5.0,
+    "rotation_speed": 90.0,
+    "battery_life": 300.0,
+    "obstacle_penalty": 50.0
   },
   "2": {
     "max_speed": 0,

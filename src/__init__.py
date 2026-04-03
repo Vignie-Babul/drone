@@ -16,3 +16,5 @@ __all__ = [
 	'utils',
 	'vr_simulator',
 ]
+from src import ui
+__all__.extend(['ui'])
