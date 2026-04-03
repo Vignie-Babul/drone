@@ -1,17 +1,22 @@
+import sys
 import os
 from direct.gui.DirectGui import DirectFrame, DirectButton, DirectLabel, DGG
 from panda3d.core import WindowProperties, TextNode, MouseButton
 
 UI_TEXT = {
     'en': {
-        'settings': 'Drone Settings', 'language': 'Language', 'save_slot': 'Save Slot',
-        'start': 'START SIMULATOR', 'reset': 'RESET DEFAULTS', 'max_speed': 'Max Speed',
+        'main_title': 'DRONE SIMULATOR', 'play': 'PLAY', 'settings': 'SETTINGS', 'exit': 'EXIT',
+        'pause_title': 'PAUSED', 'resume': 'RESUME', 'main_menu': 'MAIN MENU',
+        'settings_title': 'Settings', 'language': 'Language', 'save_slot': 'Save Slot',
+        'back': 'BACK', 'reset': 'RESET DEFAULTS', 'max_speed': 'Max Speed',
         'acceleration': 'Acceleration', 'rotation_speed': 'Rotation Speed',
         'battery_life': 'Battery Life', 'obstacle_penalty': 'Obstacle Penalty'
     },
     'ru': {
-        'settings': 'НАСТРОЙКИ ДРОНА', 'language': 'Язык', 'save_slot': 'Слот сохранения',
-        'start': 'ЗАПУСК', 'reset': 'ПО УМОЛЧАНИЮ', 'max_speed': 'Макс. скорость',
+        'main_title': 'СИМУЛЯТОР ДРОНА', 'play': 'ИГРАТЬ', 'settings': 'НАСТРОЙКИ', 'exit': 'ВЫХОД',
+        'pause_title': 'ПАУЗА', 'resume': 'ПРОДОЛЖИТЬ', 'main_menu': 'ГЛАВНОЕ МЕНЮ',
+        'settings_title': 'Настройки', 'language': 'Язык', 'save_slot': 'Слот сохранения',
+        'back': 'НАЗАД', 'reset': 'ПО УМОЛЧАНИЮ', 'max_speed': 'Макс. скорость',
         'acceleration': 'Ускорение', 'rotation_speed': 'Скор. вращения',
         'battery_life': 'Заряд батареи', 'obstacle_penalty': 'Штраф препятствий'
     }
@@ -116,9 +121,9 @@ class CustomSlider:
         return task.cont
 
 class HoverButton:
-    def __init__(self, parent, text, pos, command, font, color1):
-        self.btn = DirectButton(parent=parent, text=text, pos=pos, scale=0.055,
-                                frameSize=(-3.5, 3.5, -0.6, 0.9), relief=DGG.FLAT,
+    def __init__(self, parent, text, pos, command, font, color1, scale=0.055, frameSize=(-4.5, 4.5, -0.6, 0.9)):
+        self.btn = DirectButton(parent=parent, text=text, pos=pos, scale=scale,
+                                frameSize=frameSize, relief=DGG.FLAT,
                                 frameColor=color1, text_fg=(1, 1, 1, 1),
                                 text_font=font, command=command)
         self.btn.bind(DGG.WITHIN, lambda e: self.btn.setColorScale(1.3, 1.3, 1.3, 1))
@@ -127,53 +132,88 @@ class HoverButton:
     def set_text(self, text):
         self.btn['text'] = text
 
-class UIMenu:
+class UIManager:
     def __init__(self, app):
         self.app = app
-        self.is_open = True
         self.font = get_cyrillic_font(self.app.loader)
         self.current_lang = self.app.settings.load().get('language', 'en')
-        if self.current_lang not in UI_TEXT: self.current_lang = 'en'
+        if self.current_lang not in UI_TEXT: 
+            self.current_lang = 'en'
+            
+        self.main_frame = DirectFrame(frameSize=(-2, 2, -1, 1), frameColor=(0.08, 0.09, 0.11, 1), pos=(0, 0, 0))
+        self.pause_frame = DirectFrame(frameSize=(-2, 2, -1, 1), frameColor=(0.08, 0.09, 0.11, 0.85), pos=(0, 0, 0))
+        self.settings_frame = DirectFrame(frameSize=(-0.9, 0.9, -0.85, 0.85), frameColor=(0.08, 0.09, 0.11, 0.98), pos=(0, 0, 0))
         
-        self.frame = DirectFrame(frameSize=(-0.9, 0.9, -0.85, 0.85), frameColor=(0.08, 0.09, 0.11, 0.98), pos=(0, 0, 0))
-        self.title = DirectLabel(parent=self.frame, text=self.get_text('settings'), scale=0.08, pos=(0, 0, 0.7), text_fg=(1, 1, 1, 1), text_font=self.font, frameColor=(0,0,0,0))
+        self.build_main_menu()
+        self.build_pause_menu()
+        self.build_settings_menu()
+        
+        self.state = 'MAIN'
+        self.prev_state = 'MAIN'
+        self.app.accept('escape', self.handle_escape)
+        self.update_all_texts()
+        self.show_main()
+        
+    def build_main_menu(self):
+        self.main_title = DirectLabel(parent=self.main_frame, text="", scale=0.12, pos=(0, 0, 0.5), text_fg=(1, 1, 1, 1), text_font=self.font, frameColor=(0,0,0,0))
+        self.main_play_btn = HoverButton(self.main_frame, "", (0, 0, 0.1), self.start_game, self.font, (0.15, 0.3, 0.2, 1), scale=0.065)
+        self.main_set_btn = HoverButton(self.main_frame, "", (0, 0, -0.15), lambda: self.show_settings('MAIN'), self.font, (0.2, 0.2, 0.25, 1), scale=0.065)
+        self.main_exit_btn = HoverButton(self.main_frame, "", (0, 0, -0.4), sys.exit, self.font, (0.3, 0.15, 0.15, 1), scale=0.065)
+
+    def build_pause_menu(self):
+        self.pause_title = DirectLabel(parent=self.pause_frame, text="", scale=0.12, pos=(0, 0, 0.5), text_fg=(1, 1, 1, 1), text_font=self.font, frameColor=(0,0,0,0))
+        self.pause_res_btn = HoverButton(self.pause_frame, "", (0, 0, 0.15), self.resume_game, self.font, (0.15, 0.3, 0.2, 1), scale=0.06)
+        self.pause_set_btn = HoverButton(self.pause_frame, "", (0, 0, -0.05), lambda: self.show_settings('PAUSE'), self.font, (0.2, 0.2, 0.25, 1), scale=0.06)
+        self.pause_main_btn = HoverButton(self.pause_frame, "", (0, 0, -0.25), self.show_main, self.font, (0.2, 0.2, 0.2, 1), scale=0.06)
+        self.pause_exit_btn = HoverButton(self.pause_frame, "", (0, 0, -0.45), sys.exit, self.font, (0.3, 0.15, 0.15, 1), scale=0.06)
+
+    def build_settings_menu(self):
+        self.settings_title = DirectLabel(parent=self.settings_frame, text="", scale=0.08, pos=(0, 0, 0.7), text_fg=(1, 1, 1, 1), text_font=self.font, frameColor=(0,0,0,0))
         
         self.labels = {}
-        self.labels['language'] = DirectLabel(parent=self.frame, text=self.get_text('language'), scale=0.045, pos=(-0.7, 0, 0.5), text_fg=(0.7, 0.7, 0.7, 1), text_align=TextNode.ALeft, text_font=self.font, frameColor=(0,0,0,0))
+        self.labels['language'] = DirectLabel(parent=self.settings_frame, text="", scale=0.045, pos=(-0.7, 0, 0.5), text_fg=(0.7, 0.7, 0.7, 1), text_align=TextNode.ALeft, text_font=self.font, frameColor=(0,0,0,0))
         lang_idx = 0 if self.current_lang == 'en' else 1
-        self.lang_ctrl = SegmentedControl(self.frame, ['en', 'ru'], (-0.2, 0, 0.5), lang_idx, self.change_lang, self.font)
+        self.lang_ctrl = SegmentedControl(self.settings_frame, ['en', 'ru'], (-0.2, 0, 0.5), lang_idx, self.change_lang, self.font)
         
-        self.labels['save_slot'] = DirectLabel(parent=self.frame, text=self.get_text('save_slot'), scale=0.045, pos=(-0.7, 0, 0.4), text_fg=(0.7, 0.7, 0.7, 1), text_align=TextNode.ALeft, text_font=self.font, frameColor=(0,0,0,0))
+        self.labels['save_slot'] = DirectLabel(parent=self.settings_frame, text="", scale=0.045, pos=(-0.7, 0, 0.4), text_fg=(0.7, 0.7, 0.7, 1), text_align=TextNode.ALeft, text_font=self.font, frameColor=(0,0,0,0))
         slot = str(self.app.settings.load().get('save_slot', '1'))
         slot_idx = int(slot) - 1 if slot.isdigit() and 1 <= int(slot) <= 3 else 0
-        self.slot_ctrl = SegmentedControl(self.frame, ['1', '2', '3'], (-0.2, 0, 0.4), slot_idx, self.change_slot, self.font)
+        self.slot_ctrl = SegmentedControl(self.settings_frame, ['1', '2', '3'], (-0.2, 0, 0.4), slot_idx, self.change_slot, self.font)
         
         self.sliders = {}
         y_pos = 0.2
         for key in ['max_speed', 'acceleration', 'rotation_speed', 'battery_life', 'obstacle_penalty']:
             val = self.app.drone_config.get(key, DEFAULTS[key])
-            lbl = DirectLabel(parent=self.frame, text=self.get_text(key), scale=0.045, pos=(-0.7, 0, y_pos), text_fg=(0.7, 0.7, 0.7, 1), text_align=TextNode.ALeft, text_font=self.font, frameColor=(0,0,0,0))
+            lbl = DirectLabel(parent=self.settings_frame, text="", scale=0.045, pos=(-0.7, 0, y_pos), text_fg=(0.7, 0.7, 0.7, 1), text_align=TextNode.ALeft, text_font=self.font, frameColor=(0,0,0,0))
             self.labels[key] = lbl
             
-            slider = CustomSlider(self.app, self.frame, (-0.2, 0, y_pos+0.015), RANGES[key], val, lambda v, k=key: self.update_param(k, v), self.font)
+            slider = CustomSlider(self.app, self.settings_frame, (-0.2, 0, y_pos+0.015), RANGES[key], val, lambda v, k=key: self.update_param(k, v), self.font)
             self.sliders[key] = slider
             y_pos -= 0.12
             
-        self.reset_btn = HoverButton(self.frame, self.get_text('reset'), (-0.3, 0, -0.6), self.reset_defaults, self.font, (0.3, 0.15, 0.15, 1))
-        self.start_btn = HoverButton(self.frame, self.get_text('start'), (0.3, 0, -0.6), self.start_sim, self.font, (0.15, 0.3, 0.2, 1))
-        
-        self.app.accept('tab', self.toggle)
-        self.apply_mouse_state()
-        
+        self.set_reset_btn = HoverButton(self.settings_frame, "", (-0.3, 0, -0.6), self.reset_defaults, self.font, (0.3, 0.15, 0.15, 1))
+        self.set_back_btn = HoverButton(self.settings_frame, "", (0.3, 0, -0.6), self.close_settings, self.font, (0.15, 0.3, 0.2, 1))
+
     def get_text(self, key): 
         return UI_TEXT[self.current_lang].get(key, key)
     
-    def update_texts(self):
-        self.title['text'] = self.get_text('settings')
+    def update_all_texts(self):
+        self.main_title['text'] = self.get_text('main_title')
+        self.main_play_btn.set_text(self.get_text('play'))
+        self.main_set_btn.set_text(self.get_text('settings'))
+        self.main_exit_btn.set_text(self.get_text('exit'))
+        
+        self.pause_title['text'] = self.get_text('pause_title')
+        self.pause_res_btn.set_text(self.get_text('resume'))
+        self.pause_set_btn.set_text(self.get_text('settings'))
+        self.pause_main_btn.set_text(self.get_text('main_menu'))
+        self.pause_exit_btn.set_text(self.get_text('exit'))
+        
+        self.settings_title['text'] = self.get_text('settings_title')
         self.labels['language']['text'] = self.get_text('language')
         self.labels['save_slot']['text'] = self.get_text('save_slot')
-        self.reset_btn.set_text(self.get_text('reset'))
-        self.start_btn.set_text(self.get_text('start'))
+        self.set_reset_btn.set_text(self.get_text('reset'))
+        self.set_back_btn.set_text(self.get_text('back'))
         for key in self.sliders.keys():
             self.labels[key]['text'] = self.get_text(key)
             
@@ -182,7 +222,7 @@ class UIMenu:
         d = self.app.settings.load()
         d['language'] = lang
         self.app.settings.dump(d)
-        self.update_texts()
+        self.update_all_texts()
         
     def change_slot(self, slot):
         d = self.app.settings.load()
@@ -199,21 +239,62 @@ class UIMenu:
             self.sliders[k].set_val(v)
             self.app.drone_config[k] = v
             
-    def start_sim(self):
+    def hide_all(self):
+        self.main_frame.hide()
+        self.pause_frame.hide()
+        self.settings_frame.hide()
+        
+    def show_main(self):
+        self.state = 'MAIN'
+        self.hide_all()
+        self.main_frame.show()
+        self.apply_mouse_state(True)
+        if hasattr(self.app, 'drone_root'):
+            self.app.drone_root.setPos(0, 0, 5)
+            self.app.drone_ctrl.velocity.set(0, 0, 0)
+            self.app.drone_ctrl.current_pitch = 0
+            self.app.drone_ctrl.current_roll = 0
+            self.app.drone_ctrl.current_throttle = 0
+        
+    def start_game(self):
+        self.state = 'GAME'
+        self.hide_all()
+        self.apply_mouse_state(False)
+        
+    def show_pause(self):
+        self.state = 'PAUSE'
+        self.hide_all()
+        self.pause_frame.show()
+        self.apply_mouse_state(True)
+        
+    def resume_game(self):
+        self.start_game()
+        
+    def show_settings(self, prev_state):
+        self.prev_state = prev_state
+        self.state = 'SETTINGS'
+        self.hide_all()
+        self.settings_frame.show()
+        self.apply_mouse_state(True)
+        
+    def close_settings(self):
         self.app.drone_config_manager.dump(self.app.drone_config)
-        self.toggle()
-        
-    def toggle(self):
-        self.is_open = not self.is_open
-        if self.is_open: 
-            self.frame.show()
-        else: 
-            self.frame.hide()
-        self.apply_mouse_state()
-        
-    def apply_mouse_state(self):
+        if self.prev_state == 'MAIN':
+            self.show_main()
+        else:
+            self.show_pause()
+            
+    def handle_escape(self):
+        if self.state == 'GAME':
+            self.show_pause()
+        elif self.state == 'PAUSE':
+            self.resume_game()
+        elif self.state == 'SETTINGS':
+            self.close_settings()
+            
+    def apply_mouse_state(self, show_cursor):
         props = WindowProperties()
-        if self.is_open:
+        if show_cursor:
             props.setCursorHidden(False)
             props.setMouseMode(WindowProperties.M_absolute)
         else:

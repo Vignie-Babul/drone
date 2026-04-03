@@ -8,7 +8,7 @@ from src.models import AnalyticsEvent
 from src.utils import get_iso_datetime
 from src.vr_simulator import VRSimulator
 from src.drone_controller import DroneController
-from src.ui import UIMenu
+from src.ui import UIManager
 
 class VRDroneSimulatorApp(ShowBase):
     def __init__(self):
@@ -41,7 +41,7 @@ class VRDroneSimulatorApp(ShowBase):
         self.vr_sim.head_hpr = Vec3(0, -10, 0)
         
         self.drone_ctrl = DroneController(self.drone_root, self.drone_tilt, self.propellers, self.drone_config, self.vr_sim)
-        self.ui_menu = UIMenu(self)
+        self.ui_manager = UIManager(self)
         
         self.vr_enabled = False
         try:
@@ -100,7 +100,7 @@ class VRDroneSimulatorApp(ShowBase):
         self.cam_anchor.setPos(0, -6, 2.5)
 
     def update_loop(self, task):
-        if hasattr(self, 'ui_menu') and self.ui_menu.is_open:
+        if hasattr(self, 'ui_manager') and self.ui_manager.state != 'GAME':
             return task.cont
         dt = globalClock.getDt()
         self.drone_ctrl.update(dt)

@@ -37,8 +37,6 @@ class VRSimulator(DirectObject):
         self.accept("space-up", self.set_trigger, [False])
         self.accept("shift", self.set_grip, [True])
         self.accept("shift-up", self.set_grip, [False])
-        
-        self.accept("escape", __import__('sys').exit, [0])
 
         self.base.taskMgr.add(self.update_mouse, "vr_mouse_task")
 
@@ -57,7 +55,7 @@ class VRSimulator(DirectObject):
         self.grip_pressed = state
 
     def update_mouse(self, task):
-        if hasattr(self.base, 'ui_menu') and self.base.ui_menu.is_open:
+        if hasattr(self.base, 'ui_manager') and self.base.ui_manager.state != 'GAME':
             return task.cont
         if self.base.mouseWatcherNode.hasMouse():
             x = self.base.mouseWatcherNode.getMouseX()
