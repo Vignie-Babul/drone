@@ -53,17 +53,19 @@ class LevelManager:
 		self.obstacles.append(obs)
 
 	def create_finish(self, pos):
-		finish = self.app.loader.loadModel('box')
-		finish.setScale(10, 1, 10)
-		finish.setPos(pos)
-		finish.setColor(1, 1, 1, 0.5)
-		finish.reparentTo(self.app.render)
+		self.finish_node = self.app.loader.loadModel('box')
+		self.finish_node.setScale(10, 1, 10)
+		self.finish_node.setPos(pos)
+		self.finish_node.setColor(1, 1, 1, 0.5)
+		self.finish_node.reparentTo(self.app.render)
 
 	def reset(self):
 		for ring in self.rings:
 			ring.removeNode()
 		for obs in self.obstacles:
 			obs.removeNode()
+		if hasattr(self, 'finish_node'):
+			self.finish_node.removeNode()
 		self.rings.clear()
 		self.obstacles.clear()
 		self.moving_obstacles.clear()
@@ -84,3 +86,6 @@ class LevelManager:
 				penalty = self.app.drone_config.get('obstacle_penalty', 50)
 				self.score -= penalty
 				self.app.drone_ctrl.bounce_back()
+
+	def check_finish(self, drone_pos):
+		return drone_pos.y >= 350.0

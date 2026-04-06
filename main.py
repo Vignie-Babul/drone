@@ -1,5 +1,6 @@
 from direct.showbase.ShowBase import ShowBase
-from panda3d.core import AmbientLight, DirectionalLight, NodePath, Vec3, ClockObject
+from panda3d.core import AmbientLight, DirectionalLight, NodePath, Vec3, ClockObject, loadPrcFileData
+
 
 from src.config import PATHS, JSONConfig, Localization, SlotJSONConfig
 from src.data import DataSave
@@ -7,6 +8,8 @@ from src.vr_simulator import VRSimulator
 from src.drone_controller import DroneController
 from src.ui import UIManager
 from src.level_manager import LevelManager
+
+loadPrcFileData('', 'fullscreen true')
 
 
 class VRDroneSimulatorApp(ShowBase):
@@ -102,6 +105,8 @@ class VRDroneSimulatorApp(ShowBase):
 		self.ui_manager.update_hud(self.level_manager.score, speed, self.battery)
 		if not self.vr_enabled:
 			self.camera.setHpr(self.vr_sim.head_hpr)
+		if self.level_manager.check_finish(self.drone_root.getPos()):
+			self.ui_manager.show_victory(self.level_manager.score)
 		return task.cont
 
 

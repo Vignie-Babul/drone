@@ -25,6 +25,11 @@ UI_TEXT = {
 		'score': 'SCORE:',
 		'battery': 'BATTERY:',
 		'speed': 'SPEED:',
+		'victory_title': 'LEVEL COMPLETED',
+		'restart': 'RESTART',
+		'best_score': 'BEST SCORE:',
+		'current_score': 'SCORE:',
+		'slot_name': 'Slot',
 	},
 	'ru': {
 		'main_title': 'СИМУЛЯТОР ДРОНА',
@@ -47,6 +52,11 @@ UI_TEXT = {
 		'score': 'ОЧКИ:',
 		'battery': 'БАТАРЕЯ:',
 		'speed': 'СКОРОСТЬ:',
+		'victory_title': 'УРОВЕНЬ ПРОЙДЕН',
+		'restart': 'ЗАНОВО',
+		'best_score': 'ЛУЧШИЙ РЕЗУЛЬТАТ:',
+		'current_score': 'РЕЗУЛЬТАТ:',
+		'slot_name': 'Слот',
 	},
 }
 
@@ -101,6 +111,8 @@ class SegmentedControl:
 				text_font=font,
 				command=self.select,
 				extraArgs=[i, item],
+				text_align=TextNode.ACenter,
+				text_pos=(0, -0.1),
 			)
 			self.buttons.append(btn)
 		self.update_colors()
@@ -197,6 +209,8 @@ class HoverButton:
 			text_fg=(1, 1, 1, 1),
 			text_font=font,
 			command=command,
+			text_align=TextNode.ACenter,
+			text_pos=(0, -0.15),
 		)
 		self.btn.bind(DGG.WITHIN, lambda e: self.btn.setColorScale(1.3, 1.3, 1.3, 1))
 		self.btn.bind(DGG.WITHOUT, lambda e: self.btn.setColorScale(1, 1, 1, 1))
@@ -218,10 +232,12 @@ class UIManager:
 			frameSize=(-0.9, 0.9, -0.85, 0.85), frameColor=(0.08, 0.09, 0.11, 0.98), pos=(0, 0, 0)
 		)
 		self.hud_frame = DirectFrame(frameSize=(-2, 2, -1, 1), frameColor=(0, 0, 0, 0), pos=(0, 0, 0))
+		self.victory_frame = DirectFrame(frameSize=(-2, 2, -1, 1), frameColor=(0.08, 0.09, 0.11, 0.95), pos=(0, 0, 0))
 		self.build_main_menu()
 		self.build_pause_menu()
 		self.build_settings_menu()
 		self.build_hud()
+		self.build_victory_menu()
 		self.state = 'MAIN'
 		self.prev_state = 'MAIN'
 		self.app.accept('escape', self.handle_escape)
@@ -237,46 +253,37 @@ class UIManager:
 			text_fg=(1, 1, 1, 1),
 			text_font=self.font,
 			frameColor=(0, 0, 0, 0),
+			text_align=TextNode.ACenter,
 		)
 
 	def build_main_menu(self):
 		self.main_title = self._create_title(self.main_frame, (0, 0, 0.5))
-		self.main_play_btn = HoverButton(
-			self.main_frame, '', (0, 0, 0.1), self.start_game, self.font, (0.15, 0.3, 0.2, 1), scale=0.065
-		)
-		self.main_set_btn = HoverButton(
-			self.main_frame,
-			'',
-			(0, 0, -0.15),
-			lambda: self.show_settings('MAIN'),
-			self.font,
-			(0.2, 0.2, 0.25, 1),
-			scale=0.065,
-		)
-		self.main_exit_btn = HoverButton(
-			self.main_frame, '', (0, 0, -0.4), sys.exit, self.font, (0.3, 0.15, 0.15, 1), scale=0.065
-		)
+		self.main_btns = []
+		btn_data = [
+			('play', self.start_game, (0.15, 0.3, 0.2, 1)),
+			('settings', lambda: self.show_settings('MAIN'), (0.2, 0.2, 0.25, 1)),
+			('exit', sys.exit, (0.3, 0.15, 0.15, 1)),
+		]
+		spacing = 0.25
+		start_z = 0.1
+		for i, (key, cmd, color) in enumerate(btn_data):
+			btn = HoverButton(self.main_frame, '', (0, 0, start_z - i * spacing), cmd, self.font, color, scale=0.065)
+			self.main_btns.append((key, btn))
 
 	def build_pause_menu(self):
 		self.pause_title = self._create_title(self.pause_frame, (0, 0, 0.5))
-		self.pause_res_btn = HoverButton(
-			self.pause_frame, '', (0, 0, 0.15), self.resume_game, self.font, (0.15, 0.3, 0.2, 1), scale=0.06
-		)
-		self.pause_set_btn = HoverButton(
-			self.pause_frame,
-			'',
-			(0, 0, -0.05),
-			lambda: self.show_settings('PAUSE'),
-			self.font,
-			(0.2, 0.2, 0.25, 1),
-			scale=0.06,
-		)
-		self.pause_main_btn = HoverButton(
-			self.pause_frame, '', (0, 0, -0.25), self.show_main, self.font, (0.2, 0.2, 0.2, 1), scale=0.06
-		)
-		self.pause_exit_btn = HoverButton(
-			self.pause_frame, '', (0, 0, -0.45), sys.exit, self.font, (0.3, 0.15, 0.15, 1), scale=0.06
-		)
+		self.pause_btns = []
+		btn_data = [
+			('resume', self.resume_game, (0.15, 0.3, 0.2, 1)),
+			('settings', lambda: self.show_settings('PAUSE'), (0.2, 0.2, 0.25, 1)),
+			('main_menu', self.show_main, (0.2, 0.2, 0.2, 1)),
+			('exit', sys.exit, (0.3, 0.15, 0.15, 1)),
+		]
+		spacing = 0.2
+		start_z = 0.15
+		for i, (key, cmd, color) in enumerate(btn_data):
+			btn = HoverButton(self.pause_frame, '', (0, 0, start_z - i * spacing), cmd, self.font, color, scale=0.06)
+			self.pause_btns.append((key, btn))
 
 	def build_settings_menu(self):
 		self.settings_title = self._create_title(self.settings_frame, (0, 0, 0.7), scale=0.08)
@@ -312,7 +319,8 @@ class UIManager:
 		)
 		self.sliders = {}
 		y_pos = 0.2
-		for key in ['max_speed', 'acceleration', 'rotation_speed', 'battery_life', 'obstacle_penalty']:
+		keys = ['max_speed', 'acceleration', 'rotation_speed', 'battery_life', 'obstacle_penalty']
+		for key in keys:
 			val = self.app.drone_config.get(key, DEFAULTS[key])
 			lbl = DirectLabel(
 				parent=self.settings_frame,
@@ -375,19 +383,79 @@ class UIManager:
 			text_align=TextNode.ALeft,
 		)
 
+	def build_victory_menu(self):
+		self.vic_title = self._create_title(self.victory_frame, (0, 0, 0.65))
+		self.vic_score_lbl = DirectLabel(
+			parent=self.victory_frame,
+			text='',
+			scale=0.08,
+			pos=(0, 0, 0.4),
+			text_fg=(1, 1, 1, 1),
+			text_font=self.font,
+			frameColor=(0, 0, 0, 0),
+		)
+		self.vic_cards = []
+		spacing = 0.55
+		start_x = -0.55
+		for i in range(3):
+			card = DirectFrame(
+				parent=self.victory_frame,
+				pos=(start_x + i * spacing, 0, 0.05),
+				frameSize=(-0.25, 0.25, -0.15, 0.15),
+				frameColor=(0.15, 0.15, 0.18, 1),
+			)
+			title = DirectLabel(
+				parent=card,
+				text='',
+				scale=0.05,
+				pos=(0, 0, 0.05),
+				text_fg=(0.7, 0.7, 0.7, 1),
+				text_font=self.font,
+				frameColor=(0, 0, 0, 0),
+				text_align=TextNode.ACenter,
+			)
+			score = DirectLabel(
+				parent=card,
+				text='0',
+				scale=0.08,
+				pos=(0, 0, -0.06),
+				text_fg=(1, 1, 0, 1),
+				text_font=self.font,
+				frameColor=(0, 0, 0, 0),
+				text_align=TextNode.ACenter,
+			)
+			self.vic_cards.append((card, title, score))
+		self.vic_res_btn = HoverButton(
+			self.victory_frame,
+			'',
+			(-0.25, 0, -0.4),
+			self.restart_game,
+			self.font,
+			(0.15, 0.3, 0.2, 1),
+			scale=0.055,
+			frameSize=(-3.5, 3.5, -0.6, 0.9),
+		)
+		self.vic_main_btn = HoverButton(
+			self.victory_frame,
+			'',
+			(0.25, 0, -0.4),
+			self.show_main,
+			self.font,
+			(0.2, 0.2, 0.2, 1),
+			scale=0.055,
+			frameSize=(-3.5, 3.5, -0.6, 0.9),
+		)
+
 	def get_text(self, key):
 		return UI_TEXT[self.current_lang].get(key, key)
 
 	def update_all_texts(self):
 		self.main_title['text'] = self.get_text('main_title')
-		self.main_play_btn.set_text(self.get_text('play'))
-		self.main_set_btn.set_text(self.get_text('settings'))
-		self.main_exit_btn.set_text(self.get_text('exit'))
+		for key, btn in self.main_btns:
+			btn.set_text(self.get_text(key))
 		self.pause_title['text'] = self.get_text('pause_title')
-		self.pause_res_btn.set_text(self.get_text('resume'))
-		self.pause_set_btn.set_text(self.get_text('settings'))
-		self.pause_main_btn.set_text(self.get_text('main_menu'))
-		self.pause_exit_btn.set_text(self.get_text('exit'))
+		for key, btn in self.pause_btns:
+			btn.set_text(self.get_text(key))
 		self.settings_title['text'] = self.get_text('settings_title')
 		self.labels['language']['text'] = self.get_text('language')
 		self.labels['save_slot']['text'] = self.get_text('save_slot')
@@ -395,6 +463,11 @@ class UIManager:
 		self.set_back_btn.set_text(self.get_text('back'))
 		for key in self.sliders:
 			self.labels[key]['text'] = self.get_text(key)
+		self.vic_title['text'] = self.get_text('victory_title')
+		self.vic_res_btn.set_text(self.get_text('restart'))
+		self.vic_main_btn.set_text(self.get_text('main_menu'))
+		for i, (_, title_lbl, _) in enumerate(self.vic_cards):
+			title_lbl['text'] = f'{self.get_text("slot_name")} {i + 1}'
 
 	def update_hud(self, score, speed, battery):
 		self.hud_score['text'] = f'{self.get_text("score")} {score}'
@@ -428,6 +501,7 @@ class UIManager:
 		self.pause_frame.hide()
 		self.settings_frame.hide()
 		self.hud_frame.hide()
+		self.victory_frame.hide()
 
 	def show_main(self):
 		self.state = 'MAIN'
@@ -444,6 +518,34 @@ class UIManager:
 			self.app.level_manager.reset()
 		if hasattr(self.app, 'battery'):
 			self.app.battery = float(self.app.drone_config.get('battery_life', 300.0))
+
+	def show_victory(self, score):
+		self.state = 'VICTORY'
+		self.hide_all()
+		self.victory_frame.show()
+		self.apply_mouse_state(True)
+		d = self.app.settings.load()
+		slot = str(d.get('save_slot', '1'))
+		best_scores = d.get('best_scores', {})
+		current_best = best_scores.get(slot, 0)
+		if score > current_best:
+			best_scores[slot] = score
+			d['best_scores'] = best_scores
+			self.app.settings.dump(d)
+		self.vic_score_lbl['text'] = f'{self.get_text("current_score")} {score}'
+		for i, (card, t_lbl, s_lbl) in enumerate(self.vic_cards):
+			s_idx = str(i + 1)
+			s_lbl['text'] = str(best_scores.get(s_idx, 0))
+			if s_idx == slot:
+				card['frameColor'] = (0.2, 0.4, 0.2, 1)
+				t_lbl['text_fg'] = (1, 1, 1, 1)
+			else:
+				card['frameColor'] = (0.15, 0.15, 0.18, 1)
+				t_lbl['text_fg'] = (0.7, 0.7, 0.7, 1)
+
+	def restart_game(self):
+		self.show_main()
+		self.start_game()
 
 	def start_game(self):
 		self.state = 'GAME'
