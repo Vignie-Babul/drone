@@ -1,20 +1,25 @@
+import atexit
 from direct.showbase.ShowBase import ShowBase
 from panda3d.core import AmbientLight, DirectionalLight, NodePath, Vec3, ClockObject, loadPrcFileData
 
-
 from src.config import PATHS, JSONConfig, Localization, SlotJSONConfig, UI_TEXT
-from src.data import DataSave
+from src.data import DataSave, Analytics
 from src.vr_simulator import VRSimulator
 from src.drone_controller import DroneController
 from src.ui import UIManager
 from src.level_manager import LevelManager
+from src.utils import get_iso_datetime
+from src.vfx import VFXManager
 
 loadPrcFileData('', 'fullscreen true')
-
 
 class VRDroneSimulatorApp(ShowBase):
 	def __init__(self):
 		super().__init__()
+		self.game_started_time = get_iso_datetime()
+		self.analytics = Analytics(PATHS['data']['analytics'])
+		self.last_attempt_data = "No attempts made"
+		self.last_attempt_status = False
 		self.settings = JSONConfig(PATHS['conf']['settings'])
 		self.local = Localization(
 			PATHS['conf']['local'],
@@ -36,6 +41,7 @@ class VRDroneSimulatorApp(ShowBase):
 		self.data_save = DataSave(PATHS['data']['save'], self.settings)
 		self.setup_scene()
 		self.setup_drone()
+		self.vfx = VFXManager(self)
 		self.vr_sim = VRSimulator(self)
 		self.vr_sim.head_hpr = Vec3(0, -10, 0)
 		self.drone_ctrl = DroneController(
@@ -47,7 +53,6 @@ class VRDroneSimulatorApp(ShowBase):
 		self.vr_enabled = False
 		try:
 			from panda3d_openxr import OpenXRBase
-
 			self.xr = OpenXRBase()
 			self.xr.create()
 			self.vr_enabled = True
@@ -55,6 +60,7 @@ class VRDroneSimulatorApp(ShowBase):
 			pass
 		self.camera.reparentTo(self.cam_anchor)
 		self.taskMgr.add(self.update_loop, 'update_loop')
+		atexit.register(self.send_session_analytics)
 
 	def setup_scene(self):
 		alight = AmbientLight('alight')
@@ -110,16 +116,37 @@ class VRDroneSimulatorApp(ShowBase):
 		self.battery -= dt
 		if self.battery < 0:
 			self.battery = 0
+			if self.ui_manager.state == 'GAME':
+				self.last_attempt_data = "Drone crashed: Battery depleted"
+				self.last_attempt_status = False
 		self.drone_ctrl.update(dt)
 		self.level_manager.update(dt, self.drone_root.getPos())
+		self.vfx.update(dt)
 		speed = self.drone_ctrl.velocity.length()
 		self.ui_manager.update_hud(self.level_manager.score, speed, self.battery)
 		if not self.vr_enabled:
 			self.camera.setHpr(self.vr_sim.head_hpr)
 		if self.level_manager.check_finish(self.drone_root.getPos()):
 			self.ui_manager.show_victory(self.level_manager.score)
+			self.last_attempt_data = {
+				"timestamp": get_iso_datetime(),
+				"total_score": self.level_manager.score
+			}
+			self.last_attempt_status = True
 		return task.cont
 
+	def send_session_analytics(self):
+		event = {
+			"name": "session_summary",
+			"timestamp": get_iso_datetime(),
+			"data": {
+				"game_started": self.game_started_time,
+				"game_closed": get_iso_datetime(),
+				"status": self.last_attempt_status,
+				"data": self.last_attempt_data
+			}
+		}
+		self.analytics.send(event)
 
 if __name__ == '__main__':
 	app = VRDroneSimulatorApp()

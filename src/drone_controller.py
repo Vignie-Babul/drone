@@ -1,6 +1,5 @@
 from panda3d.core import Vec3
 
-
 class DroneController:
 	def __init__(self, root_node, tilt_node, propellers, config, vr_sim):
 		self.root = root_node
@@ -58,6 +57,9 @@ class DroneController:
 		self.velocity -= self.velocity * 0.4 * dt
 		new_pos = self.root.getPos() + self.velocity * dt
 		if new_pos.z < 0.2:
+			impact_force = abs(self.velocity.z)
+			if impact_force > 1.0:
+				self.vr_sim.base.vfx.spawn_ground_impact(new_pos, impact_force)
 			new_pos.z = 0.2
 			self.velocity.z = max(0, self.velocity.z)
 			self.velocity.x *= 0.5

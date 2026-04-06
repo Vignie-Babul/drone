@@ -17,7 +17,6 @@ class Analytics:
 			os.makedirs(path_dirname)
 
 	def _send_to_server(self, analytics: AnalyticsEvent) -> None:
-		# send to the stderr to imitate sending to a server
 		print(analytics, file=sys.stderr)
 
 	def _dump_to_file(self, analytics: AnalyticsEvent) -> None:

@@ -2,7 +2,6 @@ import math
 import random
 from panda3d.core import NodePath, Vec3
 
-
 class LevelManager:
 	def __init__(self, app):
 		self.app = app
@@ -85,6 +84,7 @@ class LevelManager:
 			if (drone_pos - ring.getPos()).length() < 6.5:
 				self.score += 100
 				self.snd_collect.play()
+				self.app.vfx.spawn_ring_pass(ring.getPos())
 				ring.removeNode()
 				self.rings.remove(ring)
 		for obs in self.obstacles:
@@ -92,11 +92,14 @@ class LevelManager:
 				penalty = self.app.drone_config.get('obstacle_penalty', 50)
 				self.score -= penalty
 				self.snd_hit.play()
+				impact_force = self.app.drone_ctrl.velocity.length()
+				self.app.vfx.spawn_collision(obs.getPos(), impact_force)
 				self.app.drone_ctrl.bounce_back()
 
 	def check_finish(self, drone_pos):
 		if not self.finished and drone_pos.y >= 350.0:
 			self.finished = True
 			self.snd_finish.play()
+			self.app.vfx.spawn_finish(self.finish_node.getPos())
 			return True
 		return False
