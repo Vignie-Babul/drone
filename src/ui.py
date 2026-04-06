@@ -22,6 +22,9 @@ UI_TEXT = {
 		'rotation_speed': 'Rotation Speed',
 		'battery_life': 'Battery Life',
 		'obstacle_penalty': 'Obstacle Penalty',
+		'score': 'SCORE:',
+		'battery': 'BATTERY:',
+		'speed': 'SPEED:',
 	},
 	'ru': {
 		'main_title': 'СИМУЛЯТОР ДРОНА',
@@ -41,6 +44,9 @@ UI_TEXT = {
 		'rotation_speed': 'Скор. вращения',
 		'battery_life': 'Заряд батареи',
 		'obstacle_penalty': 'Штраф препятствий',
+		'score': 'ОЧКИ:',
+		'battery': 'БАТАРЕЯ:',
+		'speed': 'СКОРОСТЬ:',
 	},
 }
 
@@ -122,7 +128,6 @@ class CustomSlider:
 		self.width = 0.5
 		self.val = initial_val
 		self.is_dragging = False
-
 		self.track = DirectFrame(
 			parent=parent, pos=pos, frameSize=(0, self.width, -0.005, 0.005), frameColor=(0.15, 0.15, 0.15, 1)
 		)
@@ -144,7 +149,6 @@ class CustomSlider:
 			frameColor=(0, 0, 0, 0),
 			text_align=TextNode.ALeft,
 		)
-
 		self.thumb.bind(DGG.B1PRESS, self.start_drag)
 		self.thumb.bind(DGG.B1RELEASE, self.stop_drag)
 		self.app.taskMgr.add(self.drag_task, f'drag_task_{id(self)}')
@@ -208,17 +212,16 @@ class UIManager:
 		self.current_lang = self.app.settings.load().get('language', 'en')
 		if self.current_lang not in UI_TEXT:
 			self.current_lang = 'en'
-
 		self.main_frame = DirectFrame(frameSize=(-2, 2, -1, 1), frameColor=(0.08, 0.09, 0.11, 1), pos=(0, 0, 0))
 		self.pause_frame = DirectFrame(frameSize=(-2, 2, -1, 1), frameColor=(0.08, 0.09, 0.11, 0.85), pos=(0, 0, 0))
 		self.settings_frame = DirectFrame(
 			frameSize=(-0.9, 0.9, -0.85, 0.85), frameColor=(0.08, 0.09, 0.11, 0.98), pos=(0, 0, 0)
 		)
-
+		self.hud_frame = DirectFrame(frameSize=(-2, 2, -1, 1), frameColor=(0, 0, 0, 0), pos=(0, 0, 0))
 		self.build_main_menu()
 		self.build_pause_menu()
 		self.build_settings_menu()
-
+		self.build_hud()
 		self.state = 'MAIN'
 		self.prev_state = 'MAIN'
 		self.app.accept('escape', self.handle_escape)
@@ -277,7 +280,6 @@ class UIManager:
 
 	def build_settings_menu(self):
 		self.settings_title = self._create_title(self.settings_frame, (0, 0, 0.7), scale=0.08)
-
 		self.labels = {}
 		self.labels['language'] = DirectLabel(
 			parent=self.settings_frame,
@@ -293,7 +295,6 @@ class UIManager:
 		self.lang_ctrl = SegmentedControl(
 			self.settings_frame, ['en', 'ru'], (-0.2, 0, 0.5), lang_idx, self.change_lang, self.font
 		)
-
 		self.labels['save_slot'] = DirectLabel(
 			parent=self.settings_frame,
 			text='',
@@ -309,7 +310,6 @@ class UIManager:
 		self.slot_ctrl = SegmentedControl(
 			self.settings_frame, ['1', '2', '3'], (-0.2, 0, 0.4), slot_idx, self.change_slot, self.font
 		)
-
 		self.sliders = {}
 		y_pos = 0.2
 		for key in ['max_speed', 'acceleration', 'rotation_speed', 'battery_life', 'obstacle_penalty']:
@@ -325,7 +325,6 @@ class UIManager:
 				frameColor=(0, 0, 0, 0),
 			)
 			self.labels[key] = lbl
-
 			slider = CustomSlider(
 				self.app,
 				self.settings_frame,
@@ -337,12 +336,43 @@ class UIManager:
 			)
 			self.sliders[key] = slider
 			y_pos -= 0.12
-
 		self.set_reset_btn = HoverButton(
 			self.settings_frame, '', (-0.3, 0, -0.6), self.reset_defaults, self.font, (0.3, 0.15, 0.15, 1)
 		)
 		self.set_back_btn = HoverButton(
 			self.settings_frame, '', (0.3, 0, -0.6), self.close_settings, self.font, (0.15, 0.3, 0.2, 1)
+		)
+
+	def build_hud(self):
+		self.hud_score = DirectLabel(
+			parent=self.hud_frame,
+			text='',
+			scale=0.07,
+			pos=(-1.4, 0, 0.85),
+			text_fg=(1, 1, 1, 1),
+			text_font=self.font,
+			frameColor=(0, 0, 0, 0),
+			text_align=TextNode.ALeft,
+		)
+		self.hud_battery = DirectLabel(
+			parent=self.hud_frame,
+			text='',
+			scale=0.07,
+			pos=(0.8, 0, 0.85),
+			text_fg=(1, 1, 1, 1),
+			text_font=self.font,
+			frameColor=(0, 0, 0, 0),
+			text_align=TextNode.ALeft,
+		)
+		self.hud_speed = DirectLabel(
+			parent=self.hud_frame,
+			text='',
+			scale=0.07,
+			pos=(-1.4, 0, -0.85),
+			text_fg=(1, 1, 1, 1),
+			text_font=self.font,
+			frameColor=(0, 0, 0, 0),
+			text_align=TextNode.ALeft,
 		)
 
 	def get_text(self, key):
@@ -353,13 +383,11 @@ class UIManager:
 		self.main_play_btn.set_text(self.get_text('play'))
 		self.main_set_btn.set_text(self.get_text('settings'))
 		self.main_exit_btn.set_text(self.get_text('exit'))
-
 		self.pause_title['text'] = self.get_text('pause_title')
 		self.pause_res_btn.set_text(self.get_text('resume'))
 		self.pause_set_btn.set_text(self.get_text('settings'))
 		self.pause_main_btn.set_text(self.get_text('main_menu'))
 		self.pause_exit_btn.set_text(self.get_text('exit'))
-
 		self.settings_title['text'] = self.get_text('settings_title')
 		self.labels['language']['text'] = self.get_text('language')
 		self.labels['save_slot']['text'] = self.get_text('save_slot')
@@ -367,6 +395,11 @@ class UIManager:
 		self.set_back_btn.set_text(self.get_text('back'))
 		for key in self.sliders:
 			self.labels[key]['text'] = self.get_text(key)
+
+	def update_hud(self, score, speed, battery):
+		self.hud_score['text'] = f'{self.get_text("score")} {score}'
+		self.hud_speed['text'] = f'{self.get_text("speed")} {int(speed)}'
+		self.hud_battery['text'] = f'{self.get_text("battery")} {int(battery)}s'
 
 	def change_lang(self, lang):
 		self.current_lang = lang
@@ -394,6 +427,7 @@ class UIManager:
 		self.main_frame.hide()
 		self.pause_frame.hide()
 		self.settings_frame.hide()
+		self.hud_frame.hide()
 
 	def show_main(self):
 		self.state = 'MAIN'
@@ -406,10 +440,15 @@ class UIManager:
 			self.app.drone_ctrl.current_pitch = 0
 			self.app.drone_ctrl.current_roll = 0
 			self.app.drone_ctrl.current_throttle = 0
+		if hasattr(self.app, 'level_manager'):
+			self.app.level_manager.reset()
+		if hasattr(self.app, 'battery'):
+			self.app.battery = float(self.app.drone_config.get('battery_life', 300.0))
 
 	def start_game(self):
 		self.state = 'GAME'
 		self.hide_all()
+		self.hud_frame.show()
 		self.apply_mouse_state(False)
 
 	def show_pause(self):

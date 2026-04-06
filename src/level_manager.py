@@ -1,0 +1,86 @@
+import math
+import random
+from panda3d.core import NodePath, Vec3
+
+
+class LevelManager:
+	def __init__(self, app):
+		self.app = app
+		self.rings = []
+		self.obstacles = []
+		self.moving_obstacles = []
+		self.score = 0
+		self.build_level()
+
+	def build_level(self):
+		for i in range(12):
+			y = 20 + i * 25
+			self.create_ring(Vec3(0, y, 10))
+		for i in range(15):
+			y = 30 + i * 20
+			x = random.uniform(-15, 15)
+			self.create_obstacle(Vec3(x, y, random.uniform(5, 15)), i % 3)
+		finish_pos = Vec3(0, 350, 10)
+		self.create_finish(finish_pos)
+
+	def create_ring(self, pos):
+		ring_root = NodePath('ring')
+		ring_root.setPos(pos)
+		dims = [(-3.0, 0, 0.5, 6), (3.0, 0, 0.5, 6), (0, 3.0, 6.5, 0.5), (0, -3.0, 6.5, 0.5)]
+		for dx, dz, sx, sz in dims:
+			side = self.app.loader.loadModel('box')
+			side.setScale(sx, 0.5, sz)
+			side.setPos(dx, 0, dz)
+			side.setColor(1, 1, 0, 1)
+			side.reparentTo(ring_root)
+		ring_root.reparentTo(self.app.render)
+		self.rings.append(ring_root)
+
+	def create_obstacle(self, pos, obs_type):
+		obs = self.app.loader.loadModel('box')
+		obs.setPos(pos)
+		if obs_type == 0:
+			obs.setScale(4, 1, 6)
+			obs.setColor(0.8, 0.2, 0.2, 1)
+		elif obs_type == 1:
+			obs.setScale(2, 2, 15)
+			obs.setColor(0.2, 0.8, 0.2, 1)
+		else:
+			obs.setScale(3, 3, 3)
+			obs.setColor(0.2, 0.2, 0.8, 1)
+			self.moving_obstacles.append({'node': obs, 'start_x': pos.x, 'time': random.uniform(0, 10)})
+		obs.reparentTo(self.app.render)
+		self.obstacles.append(obs)
+
+	def create_finish(self, pos):
+		finish = self.app.loader.loadModel('box')
+		finish.setScale(10, 1, 10)
+		finish.setPos(pos)
+		finish.setColor(1, 1, 1, 0.5)
+		finish.reparentTo(self.app.render)
+
+	def reset(self):
+		for ring in self.rings:
+			ring.removeNode()
+		for obs in self.obstacles:
+			obs.removeNode()
+		self.rings.clear()
+		self.obstacles.clear()
+		self.moving_obstacles.clear()
+		self.score = 0
+		self.build_level()
+
+	def update(self, dt, drone_pos):
+		for mo in self.moving_obstacles:
+			mo['time'] += dt
+			mo['node'].setX(mo['start_x'] + math.sin(mo['time']) * 15)
+		for ring in self.rings[:]:
+			if (drone_pos - ring.getPos()).length() < 6.5:
+				self.score += 100
+				ring.removeNode()
+				self.rings.remove(ring)
+		for obs in self.obstacles:
+			if (drone_pos - obs.getPos()).length() < 4.5:
+				penalty = self.app.drone_config.get('obstacle_penalty', 50)
+				self.score -= penalty
+				self.app.drone_ctrl.bounce_back()
