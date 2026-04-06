@@ -2,7 +2,7 @@ from direct.showbase.ShowBase import ShowBase
 from panda3d.core import AmbientLight, DirectionalLight, NodePath, Vec3, ClockObject, loadPrcFileData
 
 
-from src.config import PATHS, JSONConfig, Localization, SlotJSONConfig
+from src.config import PATHS, JSONConfig, Localization, SlotJSONConfig, UI_TEXT
 from src.data import DataSave
 from src.vr_simulator import VRSimulator
 from src.drone_controller import DroneController
@@ -18,7 +18,7 @@ class VRDroneSimulatorApp(ShowBase):
 		self.settings = JSONConfig(PATHS['conf']['settings'])
 		self.local = Localization(
 			PATHS['conf']['local'],
-			{'ru': {}, 'en': {}},
+			UI_TEXT,
 			self.settings,
 		)
 		self.drone_config_manager = SlotJSONConfig(

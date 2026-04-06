@@ -2,90 +2,10 @@ import sys
 import os
 from direct.gui.DirectGui import DirectFrame, DirectButton, DirectLabel, DGG
 from panda3d.core import WindowProperties, TextNode, MouseButton
-
-UI_TEXT = {
-	'en': {
-		'main_title': 'DRONE SIMULATOR',
-		'play': 'PLAY',
-		'settings': 'SETTINGS',
-		'exit': 'EXIT',
-		'pause_title': 'PAUSED',
-		'resume': 'RESUME',
-		'main_menu': 'MAIN MENU',
-		'settings_title': 'Settings',
-		'language': 'Language',
-		'save_slot': 'Save Slot',
-		'back': 'BACK',
-		'reset': 'RESET DEFAULTS',
-		'max_speed': 'Max Speed',
-		'acceleration': 'Acceleration',
-		'rotation_speed': 'Rotation Speed',
-		'battery_life': 'Battery Life',
-		'obstacle_penalty': 'Obstacle Penalty',
-		'score': 'SCORE:',
-		'battery': 'BATTERY:',
-		'speed': 'SPEED:',
-		'victory_title': 'LEVEL COMPLETED',
-		'restart': 'RESTART',
-		'best_score': 'BEST SCORE:',
-		'current_score': 'SCORE:',
-		'slot_name': 'Slot',
-	},
-	'ru': {
-		'main_title': 'СИМУЛЯТОР ДРОНА',
-		'play': 'ИГРАТЬ',
-		'settings': 'НАСТРОЙКИ',
-		'exit': 'ВЫХОД',
-		'pause_title': 'ПАУЗА',
-		'resume': 'ПРОДОЛЖИТЬ',
-		'main_menu': 'ГЛАВНОЕ МЕНЮ',
-		'settings_title': 'Настройки',
-		'language': 'Язык',
-		'save_slot': 'Слот сохранения',
-		'back': 'НАЗАД',
-		'reset': 'ПО УМОЛЧАНИЮ',
-		'max_speed': 'Макс. скорость',
-		'acceleration': 'Ускорение',
-		'rotation_speed': 'Скор. вращения',
-		'battery_life': 'Заряд батареи',
-		'obstacle_penalty': 'Штраф препятствий',
-		'score': 'ОЧКИ:',
-		'battery': 'БАТАРЕЯ:',
-		'speed': 'СКОРОСТЬ:',
-		'victory_title': 'УРОВЕНЬ ПРОЙДЕН',
-		'restart': 'ЗАНОВО',
-		'best_score': 'ЛУЧШИЙ РЕЗУЛЬТАТ:',
-		'current_score': 'РЕЗУЛЬТАТ:',
-		'slot_name': 'Слот',
-	},
-}
-
-RANGES = {
-	'max_speed': (2.0, 25.0),
-	'acceleration': (1.0, 15.0),
-	'rotation_speed': (10.0, 150.0),
-	'battery_life': (60.0, 1200.0),
-	'obstacle_penalty': (0, 100),
-}
-
-DEFAULTS = {
-	'max_speed': 15.0,
-	'acceleration': 5.0,
-	'rotation_speed': 90.0,
-	'battery_life': 300.0,
-	'obstacle_penalty': 50.0,
-}
-
+from src.config import PATHS, RANGES, DEFAULTS, UI_TEXT
 
 def get_cyrillic_font(loader):
-	paths = [
-		'src/assets/fonts/Roboto-Regular.ttf',
-		'C:/Windows/Fonts/segoeui.ttf',
-		'C:/Windows/Fonts/arial.ttf',
-		'/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-		'/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
-		'/System/Library/Fonts/Helvetica.ttc',
-	]
+	paths = PATHS.get('assets', {}).get('fonts', [])
 	for p in paths:
 		if os.path.exists(p):
 			f = loader.loadFont(p)
@@ -93,7 +13,6 @@ def get_cyrillic_font(loader):
 				f.setPixelsPerUnit(60)
 				return f
 	return TextNode.getDefaultFont()
-
 
 class SegmentedControl:
 	def __init__(self, parent, items, pos, initial_idx, command, font):
@@ -130,7 +49,6 @@ class SegmentedControl:
 			else:
 				btn['frameColor'] = (0.15, 0.15, 0.18, 1)
 				btn['text_fg'] = (0.5, 0.5, 0.5, 1)
-
 
 class CustomSlider:
 	def __init__(self, app, parent, pos, range_vals, initial_val, command, font):
@@ -195,7 +113,6 @@ class CustomSlider:
 			self.is_dragging = False
 		return task.cont
 
-
 class HoverButton:
 	def __init__(self, parent, text, pos, command, font, color1, scale=0.055, frameSize=(-4.5, 4.5, -0.6, 0.9)):
 		self.btn = DirectButton(
@@ -218,13 +135,12 @@ class HoverButton:
 	def set_text(self, text):
 		self.btn['text'] = text
 
-
 class UIManager:
 	def __init__(self, app):
 		self.app = app
 		self.font = get_cyrillic_font(self.app.loader)
 		self.current_lang = self.app.settings.load().get('language', 'en')
-		if self.current_lang not in UI_TEXT:
+		if self.current_lang not in ['en', 'ru']:
 			self.current_lang = 'en'
 		self.main_frame = DirectFrame(frameSize=(-2, 2, -1, 1), frameColor=(0.08, 0.09, 0.11, 1), pos=(0, 0, 0))
 		self.pause_frame = DirectFrame(frameSize=(-2, 2, -1, 1), frameColor=(0.08, 0.09, 0.11, 0.85), pos=(0, 0, 0))
@@ -447,7 +363,13 @@ class UIManager:
 		)
 
 	def get_text(self, key):
-		return UI_TEXT[self.current_lang].get(key, key)
+		try:
+			val = self.app.local.load().get(key)
+			if val is not None:
+				return val
+		except Exception:
+			pass
+		return UI_TEXT.get(self.current_lang, {}).get(key, key)
 
 	def update_all_texts(self):
 		self.main_title['text'] = self.get_text('main_title')
@@ -486,7 +408,16 @@ class UIManager:
 		d['save_slot'] = str(slot)
 		self.app.settings.dump(d)
 		if hasattr(self.app, 'data_save'):
-			self.app.data_save.slot = str(slot)
+			self.app.data_save._slot = str(slot)
+			self.app.data_save._save = self.app.data_save.load()
+		if hasattr(self.app, 'local'):
+			self.app.local._slot = str(slot)
+		if hasattr(self.app, 'drone_config_manager'):
+			self.app.drone_config_manager._slot = str(slot)
+			self.app.drone_config = self.app.drone_config_manager.load()
+		for k in self.sliders:
+			self.sliders[k].set_val(self.app.drone_config.get(k, DEFAULTS[k]))
+		self.update_all_texts()
 
 	def update_param(self, key, val):
 		self.app.drone_config[key] = val
@@ -524,19 +455,26 @@ class UIManager:
 		self.hide_all()
 		self.victory_frame.show()
 		self.apply_mouse_state(True)
-		d = self.app.settings.load()
-		slot = str(d.get('save_slot', '1'))
-		best_scores = d.get('best_scores', {})
-		current_best = best_scores.get(slot, 0)
+		
+		current_save = self.app.data_save.load()
+		current_best = current_save.get('total_score', 0)
+		
 		if score > current_best:
-			best_scores[slot] = score
-			d['best_scores'] = best_scores
-			self.app.settings.dump(d)
+			self.app.data_save.dump(
+				best_time=current_save.get('best_time', 0),
+				total_score=score,
+				unlocked_levels=current_save.get('unlocked_levels', 0)
+			)
+		
 		self.vic_score_lbl['text'] = f'{self.get_text("current_score")} {score}'
+		
+		all_saves = self.app.data_save.load(all_=True)
 		for i, (card, t_lbl, s_lbl) in enumerate(self.vic_cards):
 			s_idx = str(i + 1)
-			s_lbl['text'] = str(best_scores.get(s_idx, 0))
-			if s_idx == slot:
+			slot_save = all_saves.get(s_idx, {})
+			slot_best = slot_save.get('total_score', 0)
+			s_lbl['text'] = str(slot_best)
+			if s_idx == self.app.data_save._slot:
 				card['frameColor'] = (0.2, 0.4, 0.2, 1)
 				t_lbl['text_fg'] = (1, 1, 1, 1)
 			else:
