@@ -10,6 +10,10 @@ class LevelManager:
 		self.obstacles = []
 		self.moving_obstacles = []
 		self.score = 0
+		self.finished = False
+		self.snd_collect = self.app.loader.loadSfx('src/assets/sounds/collect-point.mp3')
+		self.snd_hit = self.app.loader.loadSfx('src/assets/sounds/hard-punch.mp3')
+		self.snd_finish = self.app.loader.loadSfx('src/assets/sounds/finish.mp3')
 		self.build_level()
 
 	def build_level(self):
@@ -70,6 +74,7 @@ class LevelManager:
 		self.obstacles.clear()
 		self.moving_obstacles.clear()
 		self.score = 0
+		self.finished = False
 		self.build_level()
 
 	def update(self, dt, drone_pos):
@@ -79,13 +84,19 @@ class LevelManager:
 		for ring in self.rings[:]:
 			if (drone_pos - ring.getPos()).length() < 6.5:
 				self.score += 100
+				self.snd_collect.play()
 				ring.removeNode()
 				self.rings.remove(ring)
 		for obs in self.obstacles:
 			if (drone_pos - obs.getPos()).length() < 4.5:
 				penalty = self.app.drone_config.get('obstacle_penalty', 50)
 				self.score -= penalty
+				self.snd_hit.play()
 				self.app.drone_ctrl.bounce_back()
 
 	def check_finish(self, drone_pos):
-		return drone_pos.y >= 350.0
+		if not self.finished and drone_pos.y >= 350.0:
+			self.finished = True
+			self.snd_finish.play()
+			return True
+		return False

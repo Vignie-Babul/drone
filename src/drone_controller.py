@@ -15,6 +15,9 @@ class DroneController:
 		self.gravity = -22.0
 		self.drag_coeff = 0.008
 		self.max_tilt = 85.0
+		self.engine_sound = self.vr_sim.base.loader.loadSfx('src/assets/sounds/drone-sound.mp3')
+		self.engine_sound.setLoop(True)
+		self.engine_sound.setVolume(0.0)
 
 	def update(self, dt):
 		if dt <= 0.0:
@@ -72,6 +75,10 @@ class DroneController:
 			name = prop.getName()
 			direction = -1.0 if 'FR' in name or 'BL' in name else 1.0
 			prop.setR(prop, prop_speed * direction)
+		target_vol = 0.2 + max(0, self.current_throttle) * 0.8
+		cur_vol = self.engine_sound.getVolume()
+		self.engine_sound.setVolume(cur_vol + (target_vol - cur_vol) * 5.0 * dt)
+		self.engine_sound.setPlayRate(1.0 + max(0, self.current_throttle) * 0.5)
 
 	def bounce_back(self):
 		forward = self.root.getQuat().getForward()

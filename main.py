@@ -94,7 +94,18 @@ class VRDroneSimulatorApp(ShowBase):
 
 	def update_loop(self, task):
 		if hasattr(self, 'ui_manager') and self.ui_manager.state != 'GAME':
+			if (
+				hasattr(self, 'drone_ctrl')
+				and self.drone_ctrl.engine_sound.status() == self.drone_ctrl.engine_sound.PLAYING
+			):
+				self.drone_ctrl.engine_sound.stop()
 			return task.cont
+		else:
+			if (
+				hasattr(self, 'drone_ctrl')
+				and self.drone_ctrl.engine_sound.status() != self.drone_ctrl.engine_sound.PLAYING
+			):
+				self.drone_ctrl.engine_sound.play()
 		dt = ClockObject.getGlobalClock().getDt()
 		self.battery -= dt
 		if self.battery < 0:
