@@ -7,24 +7,20 @@ from src.utils import get_iso_datetime
 
 
 def settings_test(settings: JSONConfig) -> None:
-	settings.dump(
-		{
-			Settings.LANGUAGE.value: 'en',
-			Settings.SAVE_SLOT.value: 1,
-			Settings.SAVE_SLOT_COUNT.value: 3,
-		}
-	)
+	settings.dump({
+		Settings.LANGUAGE.value: 'en',
+		Settings.SAVE_SLOT.value: 1,
+		Settings.SAVE_SLOT_COUNT.value: 3,
+	})
 	pprint(settings.load())
 	print()
 
 
 def local_config_test(settings: JSONConfig, local: Localization) -> None:
-	local.dump(
-		{
-			'ru': {'foo': 'бар', 'hello_world': 'Привет, Мир!'},
-			'en': {'foo': 'bar', 'hello_world': 'Hello! World!'},
-		}
-	)
+	local.dump({
+		'ru': {'foo': 'бар', 'hello_world': 'Привет, Мир!'},
+		'en': {'foo': 'bar', 'hello_world': 'Hello! World!'},
+	})
 	pprint(local.load())
 	print(local.load()['hello_world'])
 	print()
@@ -42,15 +38,13 @@ def drone_config_test(settings: JSONConfig) -> None:
 		},
 		settings,
 	)
-	drone.dump(
-		{
-			'max_speed': 1,
-			'acceleration': 2,
-			'rotation_speed': 3,
-			'battery_life': 4,
-			'obstacle_penalty': 5,
-		}
-	)
+	drone.dump({
+		'max_speed': 1,
+		'acceleration': 2,
+		'rotation_speed': 3,
+		'battery_life': 4,
+		'obstacle_penalty': 5,
+	})
 	pprint(drone.load())
 	print()
 
