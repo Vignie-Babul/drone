@@ -1,7 +1,7 @@
 {
   "1": {
     "max_speed": 25.0,
-    "acceleration": 5.0,
+    "acceleration": 15.0,
     "rotation_speed": 90.0,
     "battery_life": 300.0,
     "obstacle_penalty": 50.0

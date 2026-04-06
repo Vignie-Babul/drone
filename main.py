@@ -1,11 +1,8 @@
-import sys
 from direct.showbase.ShowBase import ShowBase
-from panda3d.core import AmbientLight, DirectionalLight, NodePath, Vec3
+from panda3d.core import AmbientLight, DirectionalLight, NodePath, Vec3, ClockObject
 
-from src.config import PATHS, Settings, JSONConfig, Localization, SlotJSONConfig
-from src.data import Analytics, DataSave
-from src.models import AnalyticsEvent
-from src.utils import get_iso_datetime
+from src.config import PATHS, JSONConfig, Localization, SlotJSONConfig
+from src.data import DataSave
 from src.vr_simulator import VRSimulator
 from src.drone_controller import DroneController
 from src.ui import UIManager
@@ -40,7 +37,9 @@ class VRDroneSimulatorApp(ShowBase):
         self.vr_sim = VRSimulator(self)
         self.vr_sim.head_hpr = Vec3(0, -10, 0)
         
-        self.drone_ctrl = DroneController(self.drone_root, self.drone_tilt, self.propellers, self.drone_config, self.vr_sim)
+        self.drone_ctrl = DroneController(
+            self.drone_root, self.drone_tilt, self.propellers, self.drone_config, self.vr_sim
+        )
         self.ui_manager = UIManager(self)
         
         self.vr_enabled = False
@@ -49,7 +48,7 @@ class VRDroneSimulatorApp(ShowBase):
             self.xr = OpenXRBase()
             self.xr.create()
             self.vr_enabled = True
-        except:
+        except ImportError:
             pass
 
         self.camera.reparentTo(self.cam_anchor)
@@ -72,7 +71,7 @@ class VRDroneSimulatorApp(ShowBase):
             self.environ.reparentTo(self.render)
             self.environ.setScale(0.25, 0.25, 0.25)
             self.environ.setPos(-8, 42, 0)
-        except:
+        except Exception:
             pass
 
     def setup_drone(self):
@@ -88,7 +87,7 @@ class VRDroneSimulatorApp(ShowBase):
             self.drone_model.setScale(0.01)
             self.drone_model.setHpr(90, 0, 0)
             self.propellers = self.drone_model.findAllMatches("**/prop_*")
-        except:
+        except Exception:
             self.drone_model = self.loader.loadModel("box")
             self.drone_model.setScale(0.5)
             self.propellers = [] 
@@ -102,7 +101,7 @@ class VRDroneSimulatorApp(ShowBase):
     def update_loop(self, task):
         if hasattr(self, 'ui_manager') and self.ui_manager.state != 'GAME':
             return task.cont
-        dt = globalClock.getDt()
+        dt = ClockObject.getGlobalClock().getDt()
         self.drone_ctrl.update(dt)
         if not self.vr_enabled:
             self.camera.setHpr(self.vr_sim.head_hpr)
