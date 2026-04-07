@@ -11,7 +11,7 @@ from src.level_manager import LevelManager
 from src.utils import get_iso_datetime
 from src.vfx import VFXManager
 
-loadPrcFileData('', 'fullscreen true')
+# loadPrcFileData('', 'fullscreen true')
 
 class VRDroneSimulatorApp(ShowBase):
 	def __init__(self):
