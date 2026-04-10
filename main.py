@@ -1,6 +1,9 @@
 import atexit
 from direct.showbase.ShowBase import ShowBase
-from panda3d.core import AmbientLight, DirectionalLight, NodePath, Vec3, ClockObject, loadPrcFileData
+from panda3d.core import AmbientLight, DirectionalLight, NodePath, Vec3, ClockObject, WindowProperties, loadPrcFileData
+
+loadPrcFileData('', 'notify-level-ffmpeg error')
+loadPrcFileData('', 'window-resizeable true')
 
 from src.config import PATHS, JSONConfig, Localization, SlotJSONConfig, UI_TEXT
 from src.data import DataSave, Analytics
@@ -11,11 +14,10 @@ from src.level_manager import LevelManager
 from src.utils import get_iso_datetime
 from src.vfx import VFXManager
 
-# loadPrcFileData('', 'fullscreen true')
-
 class VRDroneSimulatorApp(ShowBase):
 	def __init__(self):
 		super().__init__()
+		self.disableMouse()
 		self.game_started_time = get_iso_datetime()
 		self.analytics = Analytics(PATHS['data']['analytics'])
 		self.last_attempt_data = "No attempts made"
@@ -43,13 +45,15 @@ class VRDroneSimulatorApp(ShowBase):
 		self.setup_drone()
 		self.vfx = VFXManager(self)
 		self.vr_sim = VRSimulator(self)
-		self.vr_sim.head_hpr = Vec3(0, -10, 0)
 		self.drone_ctrl = DroneController(
 			self.drone_root, self.drone_tilt, self.propellers, self.drone_config, self.vr_sim
 		)
 		self.level_manager = LevelManager(self)
 		self.ui_manager = UIManager(self)
 		self.battery = float(self.drone_config.get('battery_life', 300.0))
+		self.run_time = 0.0
+		self.total_distance = 0.0
+		self.max_speed_run = 0.0
 		self.vr_enabled = False
 		try:
 			from panda3d_openxr import OpenXRBase
@@ -58,9 +62,20 @@ class VRDroneSimulatorApp(ShowBase):
 			self.vr_enabled = True
 		except ImportError:
 			pass
-		self.camera.reparentTo(self.cam_anchor)
+		
+		if self.vr_enabled:
+			self.cam_anchor.reparentTo(self.drone_tilt)
+			self.cam_anchor.setPosHpr(0, 0, 0, 0, 0, 0)
+			self.drone_model.hide()
+
 		self.taskMgr.add(self.update_loop, 'update_loop')
+		self.accept('f', self.toggle_fullscreen)
 		atexit.register(self.send_session_analytics)
+
+	def toggle_fullscreen(self):
+		props = WindowProperties()
+		props.setFullscreen(not self.win.getProperties().getFullscreen())
+		self.win.requestProperties(props)
 
 	def setup_scene(self):
 		alight = AmbientLight('alight')
@@ -94,9 +109,19 @@ class VRDroneSimulatorApp(ShowBase):
 			self.drone_model.setScale(0.5)
 			self.propellers = []
 		self.drone_model.reparentTo(self.drone_tilt)
+		
+		self.cam_target = NodePath('cam_target')
+		self.cam_target.reparentTo(self.drone_root)
+		self.cam_target.setPos(0, -6, 2.5)
+		
 		self.cam_anchor = NodePath('cam_anchor')
-		self.cam_anchor.reparentTo(self.drone_root)
-		self.cam_anchor.setPos(0, -6, 2.5)
+		self.cam_anchor.reparentTo(self.render)
+		
+		self.camera.reparentTo(self.cam_anchor)
+		self.camera.setPosHpr(0, 0, 0, 0, 0, 0)
+		
+		self.cam_anchor.setPos(self.cam_target.getPos(self.render))
+		self.cam_anchor.lookAt(self.drone_root.getPos() + Vec3(0, 0, 1.0))
 
 	def update_loop(self, task):
 		if hasattr(self, 'ui_manager') and self.ui_manager.state != 'GAME':
@@ -112,25 +137,43 @@ class VRDroneSimulatorApp(ShowBase):
 				and self.drone_ctrl.engine_sound.status() != self.drone_ctrl.engine_sound.PLAYING
 			):
 				self.drone_ctrl.engine_sound.play()
-		dt = ClockObject.getGlobalClock().getDt()
+		
+		dt = min(ClockObject.getGlobalClock().getDt(), 0.1)
 		self.battery -= dt
+		self.run_time += dt
 		if self.battery < 0:
 			self.battery = 0
 			if self.ui_manager.state == 'GAME':
 				self.last_attempt_data = "Drone crashed: Battery depleted"
 				self.last_attempt_status = False
+				self.ui_manager.show_game_over()
+		
 		self.drone_ctrl.update(dt)
+		
+		if not self.vr_enabled:
+			curr_pos = self.cam_anchor.getPos()
+			target_pos = self.cam_target.getPos(self.render)
+			self.cam_anchor.setPos(curr_pos + (target_pos - curr_pos) * (10.0 * dt))
+			self.cam_anchor.lookAt(self.drone_root.getPos() + Vec3(0, 0, 1.0))
+		
 		self.level_manager.update(dt, self.drone_root.getPos())
 		self.vfx.update(dt)
 		speed = self.drone_ctrl.velocity.length()
-		self.ui_manager.update_hud(self.level_manager.score, speed, self.battery)
-		if not self.vr_enabled:
-			self.camera.setHpr(self.vr_sim.head_hpr)
+		self.total_distance += speed * dt
+		if speed > self.max_speed_run:
+			self.max_speed_run = speed
+		self.ui_manager.update_hud(self.level_manager.score, speed, self.battery, self.run_time)
+		if self.level_manager.score < 0:
+			self.ui_manager.show_game_over()
 		if self.level_manager.check_finish(self.drone_root.getPos()):
-			self.ui_manager.show_victory(self.level_manager.score)
+			avg_speed = self.total_distance / self.run_time if self.run_time > 0 else 0
+			self.ui_manager.show_victory(self.level_manager.score, self.run_time, self.max_speed_run, avg_speed)
 			self.last_attempt_data = {
 				"timestamp": get_iso_datetime(),
-				"total_score": self.level_manager.score
+				"total_score": self.level_manager.score,
+				"time": self.run_time,
+				"max_speed": self.max_speed_run,
+				"avg_speed": avg_speed
 			}
 			self.last_attempt_status = True
 		return task.cont

@@ -32,11 +32,14 @@ class DroneController:
 		throttle_response_speed = acceleration * 2.0
 		self.current_throttle += (throttle_input - self.current_throttle) * throttle_response_speed * dt
 		self.root.setH(self.root.getH() - yaw_input * rotation_speed * dt)
-		target_pitch = -pitch_input * self.max_tilt
-		target_roll = roll_input * self.max_tilt
-		tilt_speed = 15.0
-		self.current_pitch += (target_pitch - self.current_pitch) * tilt_speed * dt
-		self.current_roll += (target_roll - self.current_roll) * tilt_speed * dt
+		
+		tilt_rate = 150.0
+		self.current_pitch += -pitch_input * tilt_rate * dt
+		self.current_roll += roll_input * tilt_rate * dt
+		
+		self.current_pitch = max(-self.max_tilt, min(self.max_tilt, self.current_pitch))
+		self.current_roll = max(-self.max_tilt, min(self.max_tilt, self.current_roll))
+		
 		self.tilt_node.setP(self.current_pitch)
 		self.tilt_node.setR(self.current_roll)
 		parent = self.root.getParent()

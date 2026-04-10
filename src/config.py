@@ -1,7 +1,6 @@
 from enum import Enum
 import json
 import os
-
 from src.models import StrOrPath, JSONDict, JSONMapping
 
 PATHS = {
@@ -48,11 +47,15 @@ UI_TEXT = {
 		'score': 'SCORE:',
 		'battery': 'BATTERY:',
 		'speed': 'SPEED:',
+		'time': 'TIME:',
 		'victory_title': 'LEVEL COMPLETED',
+		'game_over_title': 'GAME OVER',
 		'restart': 'RESTART',
 		'best_score': 'BEST SCORE:',
 		'current_score': 'SCORE:',
 		'slot_name': 'Slot',
+		'avg_speed': 'AVG SPEED:',
+		'max_speed_stat': 'MAX SPEED:',
 	},
 	'ru': {
 		'main_title': 'СИМУЛЯТОР ДРОНА',
@@ -75,11 +78,15 @@ UI_TEXT = {
 		'score': 'ОЧКИ:',
 		'battery': 'БАТАРЕЯ:',
 		'speed': 'СКОРОСТЬ:',
+		'time': 'ВРЕМЯ:',
 		'victory_title': 'УРОВЕНЬ ПРОЙДЕН',
+		'game_over_title': 'ИГРА ОКОНЧЕНА',
 		'restart': 'ЗАНОВО',
 		'best_score': 'ЛУЧШИЙ РЕЗУЛЬТАТ:',
 		'current_score': 'РЕЗУЛЬТАТ:',
 		'slot_name': 'Слот',
+		'avg_speed': 'СРЕДНЯЯ СКОРОСТЬ:',
+		'max_speed_stat': 'МАКС. СКОРОСТЬ:',
 	},
 }
 
